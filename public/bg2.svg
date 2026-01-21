@@ -1,0 +1,33 @@
+<svg
+  width="300"
+  height="300"
+  viewBox="0 0 300 300"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <clipPath id="clip">
+      <circle cx="150" cy="150" r="150" />
+    </clipPath>
+  </defs>
+
+  <!-- Kurdistan flag stripes (red/white/green) filling the outer circle -->
+  <g clip-path="url(#clip)">
+    <rect x="0" y="0" width="300" height="100" fill="#D90000" />
+    <rect x="0" y="100" width="300" height="100" fill="#FFFFFF" />
+    <rect x="0" y="200" width="300" height="100" fill="#0B7A2A" />
+  </g>
+
+  <!-- Yellow ring moved OUTWARDS so it is not covered by the 85% user image overlay -->
+  <!-- User image radius ≈ 127.5px (85% of 300 / 2). This ring sits outside that. -->
+  <circle
+    cx="150"
+    cy="150"
+    r="138"
+    fill="none"
+    stroke="#FFD200"
+    stroke-width="12"
+  />
+
+  <!-- Transparent center (optional; user image sits above anyway) -->
+  <circle cx="150" cy="150" r="126" fill="transparent" />
+</svg>
