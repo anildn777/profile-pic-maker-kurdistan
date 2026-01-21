@@ -129,7 +129,7 @@ export default function Home() {
               style={{ width: '300px', height: '300px' }}
             >
               <Image
-                src="/bg.webp"
+                src="/bg.svg"
                 alt="border"
                 width={300}
                 height={300}
