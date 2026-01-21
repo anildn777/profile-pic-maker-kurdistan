@@ -33,15 +33,14 @@ export default function Home() {
   }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file: File | undefined = e.target.files?.[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event: ProgressEvent<FileReader>) => {
+    reader.onload = (event) => {
       setFilePostfix('user-upload');
       setUserImageUrl(event.target?.result as string);
     };
-
     reader.readAsDataURL(file);
   };
 
@@ -50,8 +49,8 @@ export default function Home() {
   };
 
   const handleRetrieveProfilePicture = async (platform: SocialPlatform) => {
-    const userProvidedUsername = prompt(`Enter your ${platform} username:`);
-    if (!userProvidedUsername) return;
+    const username = prompt(`Enter your ${platform} username:`);
+    if (!username) return;
 
     setFilePostfix(platform);
 
@@ -59,20 +58,18 @@ export default function Home() {
       setLoader(true);
       const response = await fetch(
         `/api/retrieve-profile-pic?username=${encodeURIComponent(
-          userProvidedUsername,
+          username,
         )}&platform=${encodeURIComponent(platform)}`,
       ).then((res) => (res.ok ? res.json() : null));
 
       if (!response) {
-        alert(
-          'Error fetching your profile picture. Please check the username.',
-        );
+        alert('Error fetching your profile picture.');
         return;
       }
 
       setUserImageUrl(response.profilePicUrl);
     } catch (error) {
-      console.error('Error fetching profile picture:', error);
+      console.error(error);
     } finally {
       setLoader(false);
     }
@@ -82,20 +79,16 @@ export default function Home() {
     try {
       return await toPng(ref.current as HTMLElement);
     } catch (error) {
-      console.log('Error generating image', error);
+      console.error('Error generating image', error);
     }
   };
 
   const handleDownload = async () => {
     await generateImage();
     await generateImage();
-    const generatedImageUrl = await generateImage();
-
-    if (generatedImageUrl) {
-      download(
-        generatedImageUrl,
-        `profile-pic-${filePostfix ?? 'kurdistan'}.png`,
-      );
+    const img = await generateImage();
+    if (img) {
+      download(img, `profile-pic-${filePostfix ?? 'kurdistan'}.png`);
     }
   };
 
@@ -255,7 +248,6 @@ export default function Home() {
           <p className="p-2 my-6 text-sm border rounded-lg">
             Runs entirely in your browser. No images or data are stored.
           </p>
-
         </div>
       </div>
     </main>
