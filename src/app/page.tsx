@@ -19,11 +19,9 @@ export default function Home() {
   const [userImageUrl, setUserImageUrl] = useState<string>();
   const [unsupportedBrowser, setUnsupportedBrowser] = useState(false);
   const [loader, setLoader] = useState(false);
-  const [filePostfix, setFilePostfix] = useState<
-    SocialPlatform | 'user-upload'
-  >();
+  const [filePostfix, setFilePostfix] =
+    useState<SocialPlatform | 'user-upload'>();
 
-  // Detect in-app browsers (Instagram/Facebook)
   useEffect(() => {
     const isInstagramBrowser = /Instagram/i.test(navigator.userAgent);
     const isFacebookBrowser = /FBAN|FBAV/i.test(navigator.userAgent);
@@ -35,14 +33,18 @@ export default function Home() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = e.target.files?.[0];
-    if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (event: ProgressEvent<FileReader>) => {
-      setFilePostfix('user-upload');
-      setUserImageUrl(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+
+    if (file) {
+      reader.onload = async (event: ProgressEvent<FileReader>) => {
+        setFilePostfix('user-upload');
+        setUserImageUrl(event.target?.result as string);
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      console.error('No file selected.');
+    }
   };
 
   const handleUploadButtonClick = () => {
@@ -51,59 +53,57 @@ export default function Home() {
 
   const handleRetrieveProfilePicture = async (platform: SocialPlatform) => {
     const userProvidedUsername = prompt(`Enter your ${platform} username:`);
-    if (!userProvidedUsername) return;
 
-    setFilePostfix(platform);
+    if (userProvidedUsername) {
+      setFilePostfix(platform);
+      try {
+        setLoader(true);
+        const response = await fetch(
+          `/api/retrieve-profile-pic?username=${encodeURIComponent(
+            userProvidedUsername,
+          )}&platform=${encodeURIComponent(platform)}`,
+        ).then((res) => (res.ok ? res.json() : null));
 
-    try {
-      setLoader(true);
-      const response = await fetch(
-        `/api/retrieve-profile-pic?username=${encodeURIComponent(
-          userProvidedUsername,
-        )}&platform=${encodeURIComponent(platform)}`,
-      ).then((res) => (res.ok ? res.json() : null));
+        if (response === null) {
+          alert(
+            'Error fetching your profile picture. Please make sure that you entered a correct username.',
+          );
+          return;
+        }
 
-      if (response === null) {
-        alert(
-          'Error fetching your profile picture. Please make sure that you entered a correct username.',
-        );
-        return;
+        setUserImageUrl(response.profilePicUrl);
+      } catch (error) {
+        console.error('Error fetching profile picture:', error);
+      } finally {
+        setLoader(false);
       }
-
-      setUserImageUrl(response.profilePicUrl);
-    } catch (error) {
-      console.error('Error fetching profile picture:', error);
-      alert('Error fetching your profile picture.');
-    } finally {
-      setLoader(false);
     }
   };
 
   const generateImage = async () => {
     try {
-      if (!ref.current) return;
-      // cacheBust hilft bei manchen Browsern
-      return await toPng(ref.current as HTMLElement, { cacheBust: true });
+      return await toPng(ref.current as HTMLElement);
     } catch (error) {
       console.log('Error generating image', error);
     }
   };
 
   const handleDownload = async () => {
-    // Hack beibehalten (wie im Original), aber ohne unnötige 4. Call-Variante
+    await generateImage();
     await generateImage();
     await generateImage();
     const generatedImageUrl = await generateImage();
+
     if (generatedImageUrl) {
-      download(generatedImageUrl, `profile-pic-${filePostfix ?? 'kurdistan'}.png`);
-    } else {
-      alert('Could not generate image. Try again in Chrome/Safari.');
+      download(
+        generatedImageUrl,
+        `profile-pic-${filePostfix ?? 'kurdistan'}.png`,
+      );
     }
   };
 
-  const startOver = () => {
+  const startOver = async () => {
     setUserImageUrl(undefined);
-    setFilePostfix(undefined);
   };
 
   return (
@@ -134,19 +134,19 @@ export default function Home() {
               className="relative"
               ref={ref}
             >
-              {/* Border / Frame */}
               <Image
-                width={300}
-                height={300}
+                width={100}
+                height={100}
                 alt="border"
                 id="borderImage"
-                // ✅ Empfohlen: bg.png statt bg.webp
-                // Falls du noch kein PNG hast, temporär wieder "/bg.webp" setzen.
-                src={'/bg.png'}
-                style={{ position: 'absolute', width: '100%', height: '100%' }}
+                src={'/bg.webp'}
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                }}
                 className="rounded-full"
                 unoptimized
-                priority
               />
 
               {loader ? (
@@ -154,8 +154,8 @@ export default function Home() {
                   id="spinner"
                   alt="spinner-animation"
                   src={'/spinner.svg'}
-                  width={300}
-                  height={300}
+                  width={100}
+                  height={100}
                   style={{
                     position: 'absolute',
                     width: '85%',
@@ -164,15 +164,14 @@ export default function Home() {
                     top: '7.5%',
                   }}
                   className="object-cover rounded-full cursor-wait"
-                  priority
                 />
               ) : (
                 <Image
                   id="userImage"
                   alt="profile-image"
                   src={userImageUrl ?? '/user.jpg'}
-                  width={300}
-                  height={300}
+                  width={100}
+                  height={100}
                   style={{
                     position: 'absolute',
                     width: '85%',
@@ -181,8 +180,6 @@ export default function Home() {
                     top: '7.5%',
                   }}
                   className="object-cover rounded-full cursor-pointer"
-                  unoptimized
-                  priority
                 />
               )}
             </div>
@@ -230,28 +227,36 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => handleRetrieveProfilePicture(SocialPlatform.Twitter)}
+                onClick={async () =>
+                  await handleRetrieveProfilePicture(SocialPlatform.Twitter)
+                }
                 className="rounded-full my-2 py-3 px-2 w-full border border-gray-900 text-xl"
               >
                 Use <FaXTwitter className="inline mb-1" /> Profile Pic
               </button>
 
               <button
-                onClick={() => handleRetrieveProfilePicture(SocialPlatform.Github)}
+                onClick={async () =>
+                  await handleRetrieveProfilePicture(SocialPlatform.Github)
+                }
                 className="rounded-full my-2 py-3 px-2 w-full border border-gray-900 text-xl"
               >
                 Use <FaGithub className="inline mb-1" /> Profile Pic
               </button>
 
               <button
-                onClick={() => handleRetrieveProfilePicture(SocialPlatform.Gitlab)}
+                onClick={async () =>
+                  await handleRetrieveProfilePicture(SocialPlatform.Gitlab)
+                }
                 className="rounded-full my-2 py-3 px-2 w-full border border-gray-900 text-xl"
               >
                 Use <FaGitlab className="inline mb-1" /> Profile Pic
               </button>
 
               <button
-                onClick={() => handleRetrieveProfilePicture(SocialPlatform.Bluesky)}
+                onClick={async () =>
+                  await handleRetrieveProfilePicture(SocialPlatform.Bluesky)
+                }
                 className="rounded-full my-2 py-3 px-2 w-full border border-gray-900 text-xl"
               >
                 Use <FaBluesky className="inline mb-1" /> Profile Pic
@@ -262,23 +267,12 @@ export default function Home() {
 
         <div className="pt-8">
           <p className="p-2 my-6 text-sm border rounded-lg">
-            Note: This app runs entirely in your browser. No images nor data will be saved.
+            Note: This app runs purely on your browser end. No images nor data
+            will be saved by the app.
           </p>
 
           <p className="text-gray-600">
-            Feedback:{' '}
-            <a
-              href="https://x.com/"
-              target="_blank"
-              className="underline cursor-pointer"
-              rel="noreferrer"
-            >
-              reach out on X
-            </a>
-          </p>
-
-          <p className="text-gray-600">
-            Bugs / issues:{' '}
+            For any bugs, please report them to this{' '}
             <a
               href="https://github.com/anildn777/profile-pic-maker-kurdistan/issues"
               target="_blank"
@@ -287,6 +281,7 @@ export default function Home() {
             >
               GitHub repository
             </a>
+            .
           </p>
         </div>
       </div>
