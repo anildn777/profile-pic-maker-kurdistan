@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     description:
       'Create your Kurdistan profile picture to show your solidarity and pride.',
     siteName: 'Kurdistan Profile Pic Maker ☀️',
-    images: '/social-card.png',
+    images: '/social-card2.png',
   },
 };
 
