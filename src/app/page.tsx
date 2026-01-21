@@ -256,17 +256,6 @@ export default function Home() {
             Runs entirely in your browser. No images or data are stored.
           </p>
 
-          <p className="text-gray-600">
-            Bugs or feedback:{' '}
-            <a
-              href="https://github.com/anildn777/profile-pic-maker-kurdistan/issues"
-              target="_blank"
-              className="underline"
-              rel="noreferrer"
-            >
-              GitHub Issues
-            </a>
-          </p>
         </div>
       </div>
     </main>
